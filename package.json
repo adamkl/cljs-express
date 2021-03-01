@@ -1,0 +1,26 @@
+{
+  "name": "cljs-express",
+  "version": "0.0.1-alpha-1",
+  "description": "A ClojureScript wrapper for Express",
+  "main": "index.js",
+  "scripts": {
+    "start": "node out/cljs-express/index.js",
+    "cz": "cz"
+  },
+  "author": "adamkl",
+  "license": "ISC",
+  "devDependencies": {
+    "commitizen": "^4.2.3",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^5.1.1",
+    "shadow-cljs": "^2.11.18"
+  },
+  "dependencies": {
+    "express": "4.17.1"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}

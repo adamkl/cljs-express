@@ -1,0 +1,11 @@
+{:source-paths ["src" "dev"]
+
+ :dependencies []
+
+ :builds
+ {:dev {:target :node-script
+        :main app/main
+        :output-to "out/cljs-express/index.js"
+        :devtools
+        {:after-load app/start!
+         :before-load app/stop!}}}}
