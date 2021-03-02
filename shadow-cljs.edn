@@ -1,6 +1,6 @@
 {:source-paths ["src" "dev"]
 
- :dependencies []
+ :dependencies [[org.clojure/clojure "1.10.2"]]
 
  :builds
  {:dev {:target :node-script

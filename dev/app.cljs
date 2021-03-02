@@ -1,16 +1,28 @@
 (ns app
-  (:require [cljs-express.core :refer [start]]))
+  (:require [cljs-express :refer [express]]
+            [cljs-express.middleware.json :refer [json]]))
 
-(defonce server (atom nil))
+(defonce app (atom nil))
 
 (defn start! []
   (println "starting")
-  (reset! server (start)))
+  (reset! app (-> (express)
+      (.get "/" (fn [req res] (.send res "Hello, world")))
+      (.listen 3000 (fn [] (println "Example app listening on port 3000!"))))))
 
 (defn stop! []
   (println "stopping")
-  (.close @server)
-  (reset! server nil))
+  (.close @app)
+  (reset! app nil))
 
 (defn main []
   (start!))
+
+(comment
+  (def a (-> (express)
+             (json)))
+  (-> a
+      (.post "/" (fn [req res] (.json res (.-body req))))
+      (.listen 3001))
+  (.close a)
+  (comment))
