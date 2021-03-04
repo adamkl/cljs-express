@@ -2,4 +2,6 @@ node_modules/
 .lsp/
 .calva/
 .shadow-cljs/
+.cpcache/
+.clj-kondo/
 out/

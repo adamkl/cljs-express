@@ -1,11 +1,14 @@
-{:source-paths ["src" "dev"]
+{:source-paths ["src" "dev" "tests"]
 
  :dependencies [[org.clojure/clojure "1.10.2"]]
 
- :builds
- {:dev {:target :node-script
-        :main app/main
-        :output-to "out/cljs-express/index.js"
-        :devtools
-        {:after-load app/start!
-         :before-load app/stop!}}}}
+ :builds {:dev {:target :node-script
+                :main app/main
+                :output-to "out/cljs-express/index.js"
+                :devtools
+                {:after-load app/start!
+                 :before-load app/stop!}}
+          :test {:target :node-test
+                 :output-to "out/cljs-express/test.js"
+                 :ns-regexp "-test$"
+                 :autorun true}}}
