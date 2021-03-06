@@ -1,6 +1,7 @@
-{:source-paths ["src" "dev" "tests"]
+{:source-paths ["src" "dev" "test"]
 
- :dependencies [[org.clojure/clojure "1.10.2"]]
+ :dependencies [[org.clojure/clojure "1.10.2"]
+                [applied-science/js-interop "0.2.7"]]
 
  :builds {:dev {:target :node-script
                 :main app/main

@@ -3,7 +3,16 @@
 
 (defonce app (atom nil))
 
-(def routes [["/" :get (fn [req res] (.send res "Hello everyone!"))]])
+
+(defn hello [ctx]
+  (assoc ctx :response {:status 200
+                        :body "Hello everyone!"}))
+
+(defn missing [ctx]
+  ctx)
+
+(def routes [["/hello" :get hello]
+             ["/missing" :get missing]])
 
 (defn start! []
   (reset! app (-> (express {:routes routes})

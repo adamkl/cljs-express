@@ -1,11 +1,12 @@
 (ns cljs-express.router
-  (:require ["express" :as express]))
+  (:require ["express" :as express]
+            [cljs-express.middleware :refer [wrap-middleware]]))
 
 (defn- key->method [method-key]
   (fn [^js router path middleware]
     (case method-key
-      :get (.get router path middleware)
-      :post (.post router path middleware))))
+      :get (.get router path (wrap-middleware middleware))
+      :post (.post router path (wrap-middleware middleware)))))
 
 (defn build-router
   ([routes]
