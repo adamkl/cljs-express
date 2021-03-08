@@ -8,6 +8,7 @@
 
 
 (defn hello [ctx]
+  (prn ctx)
   (assoc ctx :response {:status 200
                         :body "Hello everyone!"}))
 
