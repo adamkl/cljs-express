@@ -1,4 +1,5 @@
-(ns cljs-express.util)
+(ns cljs-express.util
+  (:require [clojure.core.async.impl.channels :refer [ManyToManyChannel]]))
 
 ;; I should model this more closely after the standard js->clj?
 ;; Doesn't properly handle arrays with non-Object values
@@ -15,3 +16,6 @@
                 (assoc result (keyfn key) (js->clj+ v)))))
           (reduce {} (.getKeys ^js goog/object obj)))
       obj)))
+
+(defn chan? [c]
+  (instance? ManyToManyChannel c))

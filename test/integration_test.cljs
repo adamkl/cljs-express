@@ -1,41 +1,71 @@
 (ns integration-test
   (:require [clojure.test :refer [use-fixtures deftest testing is async]]
-            [applied-science.js-interop :as jsi]
+            [clojure.core.async :refer [chan put!]]
             ["supertest" :as request]
             [cljs-express :refer [express]]))
 
 (defonce app (atom nil))
 
-
-(defn hello [ctx]
-  (prn ctx)
+(defn get-sync [ctx]
   (assoc ctx :response {:status 200
-                        :body "Hello everyone!"}))
+                        :body "sync"}))
 
-(defn missing [ctx]
-  ctx)
+(defn get-sync-unhandled-err [ctx]
+  (throw (ex-info "unhandled sync error" {})))
 
-(def routes [["/hello" :get hello]
-             ["/missing" :get missing]])
+(defn get-async [ctx]
+  (let [c (chan)]
+    (put! c (assoc ctx :response {:status 200
+                                  :body "async"}))
+    c))
+
+(defn get-async-unhandled-err [ctx]
+  (let [c (chan)]
+    (put! c (ex-info "unhandled async error" {}))
+    c))
+
+
+(def routes [["/sync" :get get-sync]
+             ["/sync-err" :get get-sync-unhandled-err]
+             ["/async" :get get-async]
+             ["/async-err" :get get-async-unhandled-err]])
 
 (use-fixtures :once
   {:before #(reset! app (express {:routes routes}))
    :after #(reset! app nil)})
 
-(deftest hello-test
-  (testing "hello route"
+(deftest sync-test
+  (testing "sync route"
     (async done
            (-> (request @app)
-               (.get "/hello")
+               (.get "/sync")
                (.expect #(is (= 200 (.-status %))))
-               (.expect #(is (= "Hello everyone!" (.-text %))))
+               (.expect #(is (= "sync" (.-text %))))
                (.end done)))))
 
-(deftest missing-test
-  (testing "missing route"
+(deftest sync-unhandled-err-test
+  (testing "sync unhandled err route"
     (async done
            (-> (request @app)
-               (.get "/missing")
-               (.expect #(is (= 404 (.-status %))))
-               (.expect #(is (= "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /missing</pre>\n</body>\n</html>\n" (.-text %))))
+               (.get "/sync-err")
+               (.expect #(is (= 500 (.-status %))))
+               (.expect #(is (re-find #"Error\: unhandled sync error" (.-text %))))
+               (.end done)))))
+
+(deftest async-test
+  (testing "async route"
+    (async done
+           (-> (request @app)
+               (.get "/async")
+               (.expect #(is (= 200 (.-status %))))
+               (.expect #(is (= "async" (.-text %))))
+               (.end done)))))
+
+(deftest async-unhandled-err-test
+  (testing "async unhandled err route"
+    (async done
+           (-> (request @app)
+               (.get "/async-err")
+               (.expect #(is (= 500 (.-status %))))
+               (.expect #(is (re-find #"Error\: unhandled async error" (.-text %))))
                (.end done)))))

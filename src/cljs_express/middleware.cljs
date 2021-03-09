@@ -1,6 +1,7 @@
 (ns cljs-express.middleware
   (:require [applied-science.js-interop :as jsi]
-            [cljs-express.util :refer [js->clj+]]))
+            [clojure.core.async :refer [go <!]]
+            [cljs-express.util :refer [js->clj+ chan?]]))
 
 (def default-req-props
   [:aborted
@@ -35,12 +36,24 @@
         (assoc result key (js->clj+ (jsi/get req key))))
       (reduce {} props-to-map)))
 
+(defn process-new-ctx [new-ctx res next]
+  (if-let [{:keys [status body]} (:response new-ctx)]
+    (doto res
+      (.status status)
+      (.send body))
+    (next)))
+
 (defn wrap-middleware [middleware props-to-map]
   (fn [req res next]
-    (let [{:keys [response] :as ctx} (middleware {:request (req->map req props-to-map)
-                                                  :_req req})]
-      (if-let [{:keys [status body]} response]
-        (doto res
-          (.status status)
-          (.send body))
-        (next)))))
+    (go
+      (try
+        (let [ctx {:request (req->map req props-to-map)}
+              maybe-chan (middleware ctx)
+              new-ctx-or-err (if (chan? maybe-chan)
+                               (<! maybe-chan)
+                               maybe-chan)]
+          (if (instance? js/Error new-ctx-or-err)
+            (next new-ctx-or-err)
+            (process-new-ctx new-ctx-or-err res next)))
+        (catch js/Error err
+          (next err))))))
