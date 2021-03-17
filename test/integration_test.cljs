@@ -24,12 +24,17 @@
     (put! c (ex-info "unhandled async error" {}))
     c))
 
+(defn get-nested [ctx]
+  (assoc ctx :response {:status 200
+                        :body "nested"}))
 
 (def routes [{:router-opts #js{:caseSensitive true}}
              ["/sync" :get get-sync]
              ["/sync-err" :get get-sync-unhandled-err]
              ["/async" :get get-async]
-             ["/async-err" :get get-async-unhandled-err]])
+             ["/async-err" :get get-async-unhandled-err]
+             ["/nested"
+              [["/route" :get get-nested]]]])
 
 (use-fixtures :once
   {:before #(reset! app (express {:routes routes}))
@@ -78,4 +83,13 @@
                (.get "/async-err")
                (.expect #(is (= 500 (.-status %))))
                (.expect #(is (re-find #"Error\: unhandled async error" (.-text %))))
+               (.end done)))))
+
+(deftest nested-test
+  (testing "nested route"
+    (async done
+           (-> (request @app)
+               (.get "/nested/route")
+               (.expect #(is (= 200 (.-status %))))
+               (.expect #(is (= "nested" (.-text %))))
                (.end done)))))
