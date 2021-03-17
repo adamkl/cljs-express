@@ -25,7 +25,8 @@
     c))
 
 
-(def routes [["/sync" :get get-sync]
+(def routes [{:router-opts #js{:caseSensitive true}}
+             ["/sync" :get get-sync]
              ["/sync-err" :get get-sync-unhandled-err]
              ["/async" :get get-async]
              ["/async-err" :get get-async-unhandled-err]])
@@ -33,6 +34,15 @@
 (use-fixtures :once
   {:before #(reset! app (express {:routes routes}))
    :after #(reset! app nil)})
+
+(deftest router-opts-test
+  (testing "case sensitive route"
+    (async done
+           (-> (request @app)
+               (.get "/Sync")
+               (.expect #(is (= 404 (.-status %))))
+               (.expect #(is (= "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /Sync</pre>\n</body>\n</html>\n" (.-text %))))
+               (.end done)))))
 
 (deftest sync-test
   (testing "sync route"
