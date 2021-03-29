@@ -4,7 +4,7 @@
 ;; I should model this more closely after the standard js->clj?
 ;; Doesn't properly handle arrays with non-Object values
 (defn js->clj+
-  [obj & [{:keys [keywordize-keys]}]]
+  [obj & {:keys [keys keywordize-keys]}]
   (let [keyfn (if keywordize-keys keyword str)]
     (if (goog/isObject obj)
       (-> (fn [result key]
@@ -12,9 +12,11 @@
                   t (goog/typeOf v)]
               (case t
                 "function" result
-                "array" (assoc result (keyfn key) (js->clj v))
-                (assoc result (keyfn key) (js->clj+ v)))))
-          (reduce {} (.getKeys ^js goog/object obj)))
+                "array" (assoc result (keyfn key) (js->clj+ v :keywordize-keys keywordize-keys))
+                (assoc result (keyfn key) (js->clj+ v :keywordize-keys keywordize-keys)))))
+          (reduce {} (if keys
+                       keys
+                       (.getKeys ^js goog/object obj))))
       obj)))
 
 (defn chan? [c]
