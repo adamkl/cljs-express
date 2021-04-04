@@ -1,11 +1,15 @@
-{:source-paths ["src" "dev" "test"]
+{:source-paths ["src" "test"]
 
  :dependencies [[org.clojure/clojure "1.10.2"]
                 [applied-science/js-interop "0.2.7"]]
 
  :builds {:dev {:target :node-script
+                :extra-paths "dev"
+                :main cljs.user/main
+                :output-to "out/cljs-express/index.js"}
+          :app {:target :node-script
                 :main app/main
-                :output-to "out/cljs-express/index.js"
+                :output-to "out/cljs-express/app.js"
                 :devtools
                 {:after-load app/start!
                  :before-load app/stop!}}

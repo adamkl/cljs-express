@@ -28,16 +28,20 @@
     (next)))
 
 (defn wrap-middleware [middleware]
-  (fn [req res next]
-    (go
-      (try
-        (let [ctx {:request (req->map req)}
-              maybe-chan (middleware ctx)
-              new-ctx-or-err (if (chan? maybe-chan)
-                               (<! maybe-chan)
-                               maybe-chan)]
-          (if (instance? js/Error new-ctx-or-err)
-            (next new-ctx-or-err)
-            (process-new-ctx new-ctx-or-err res next)))
-        (catch js/Error err
-          (next err))))))
+  ; cljs-express middleware only uses one arg
+  ; js middleware uses 2+
+  (if (= 1 (jsi/get middleware :length))
+    (fn [req res next]
+      (go
+        (try
+          (let [ctx {:request (req->map req)}
+                maybe-chan (middleware ctx)
+                new-ctx-or-err (if (chan? maybe-chan)
+                                 (<! maybe-chan)
+                                 maybe-chan)]
+            (if (instance? js/Error new-ctx-or-err)
+              (next new-ctx-or-err)
+              (process-new-ctx new-ctx-or-err res next)))
+          (catch js/Error err
+            (next err)))))
+    middleware))
