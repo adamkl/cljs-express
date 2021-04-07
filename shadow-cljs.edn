@@ -1,12 +1,13 @@
-{:source-paths ["src" "test"]
+{:source-paths ["src" "dev" "test"]
 
  :dependencies [[org.clojure/clojure "1.10.2"]
-                [applied-science/js-interop "0.2.7"]]
+                [applied-science/js-interop "0.2.7"]
+                [org.clojure/core.match "1.0.0"]]
 
  :builds {:dev {:target :node-script
-                :extra-paths "dev"
-                :main cljs.user/main
-                :output-to "out/cljs-express/index.js"}
+                :main user/main
+                :output-to "out/cljs-express/index.js"
+                :devtools {:repl-init-ns user}}
           :app {:target :node-script
                 :main app/main
                 :output-to "out/cljs-express/app.js"

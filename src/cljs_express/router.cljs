@@ -1,7 +1,28 @@
 (ns cljs-express.router
   (:require ["express" :as express]
+            [clojure.core.match :refer [match]]
+            [clojure.spec.alpha :as s]
             [applied-science.js-interop :as jsi]
             [cljs-express.middleware :refer [wrap-middleware]]))
+
+(s/def ::router-opts map?)
+(s/def ::opt-map (s/keys :req-un [::router-opts]))
+(s/def ::route keyword?)
+(s/def ::route-args (s/or :opts-and-routes (s/cat :opts ::opt-map :routes (s/+ ::route))
+                          :just-routes (s/+ ::route)))
+
+(comment
+  (defn conform-route-args [x]
+    (let [conformed (apply hash-map (s/conform ::route-args x))]
+      (match [conformed]
+        [{:opts-and-routes onr}] onr
+        [{:just-routes routes}] routes)))
+
+  (conform-route-args [:a :b :c])
+  (conform-route-args [{:router-opts {:1 "val"}} :a :b :c])
+  (conform-route-args [{:invalid 10} :a :b :c])
+
+  (comment))
 
 (defn map-routes
   ([router routes]
