@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node out/cljs-express/index.js",
-    "test": "node out/cljs-express/test.js",
+    "test": "shadow-cljs compile test && node out/cljs-express/test.js",
     "cz": "cz"
   },
   "author": "adamkl",

@@ -2,42 +2,30 @@
   (:require ["express" :as express]
             [clojure.core.match :refer [match]]
             [clojure.spec.alpha :as s]
+            [expound.alpha :as expound]
             [applied-science.js-interop :as jsi]
             [cljs-express.middleware :refer [wrap-middleware]]))
 
 (s/def ::router-opts map?)
 (s/def ::opt-map (s/keys :req-un [::router-opts]))
-(s/def ::route keyword?)
+(s/def ::route vector?)
 (s/def ::route-args (s/or :opts-and-routes (s/cat :opts ::opt-map :routes (s/+ ::route))
                           :just-routes (s/+ ::route)))
 
-(comment
-  (defn conform-route-args [x]
-    (let [conformed (apply hash-map (s/conform ::route-args x))]
-      (match [conformed]
-        [{:opts-and-routes onr}] onr
-        [{:just-routes routes}] routes)))
+(defn- conform-route-args [x]
+  (let [conformed (s/conform ::route-args x)]
+    (if (s/invalid? conformed)
+      (throw (ex-info (expound/expound-str ::route-args x) {}))
+      (apply hash-map conformed))))
 
-  (conform-route-args [:a :b :c])
-  (conform-route-args [{:router-opts {:1 "val"}} :a :b :c])
-  (conform-route-args [{:invalid 10} :a :b :c])
+(defn- get-router-and-routes [conformed]
+  (match [conformed]
+    [{:opts-and-routes r}] [(.Router express (-> r :opts :router-opts (clj->js))) (-> r :routes)]
+    [{:just-routes r}] [(.Router express) r]))
 
-  (comment))
-
-(defn map-routes
-  ([router routes]
-   (doseq [[path method-key middleware] routes]
-     (jsi/call router
-               method-key
-               path
-               (wrap-middleware middleware)))
-   router))
-
-(defn build-router
-  [r]
-  (let [opts (first r)
-        routes (if (map? opts) (rest r) r)
-        router (.Router express (:router-opts opts))]
+(defn build-router [r]
+  (let [conformed (conform-route-args r)
+        [router routes] (get-router-and-routes conformed)]
     (doseq [[path method-or-nested-routes middleware] routes]
       (if (coll? method-or-nested-routes)
         (jsi/call router

@@ -4,6 +4,9 @@
             ["supertest" :as request]
             [cljs-express :refer [express]]))
 
+; suppress logging of unhandled errors by express during tests
+(set! (.. js/process -env -NODE_ENV) "test")
+
 (defonce app (atom nil))
 
 (defn get-sync [ctx]
@@ -28,7 +31,7 @@
   (assoc ctx :response {:status 200
                         :body "nested"}))
 
-(def routes [{:router-opts #js{:caseSensitive true}}
+(def routes [{:router-opts {:caseSensitive true}}
              ["/sync" :get get-sync]
              ["/sync-err" :get get-sync-unhandled-err]
              ["/async" :get get-async]
