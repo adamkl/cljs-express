@@ -27,6 +27,13 @@
     (put! c (ex-info "unhandled async error" {}))
     c))
 
+(defn middleware [ctx]
+  (assoc-in ctx [:request :name] "Adam"))
+
+(defn get-middleware [ctx]
+  (assoc ctx :response {:status 200
+                        :body (get-in ctx [:request :name])}))
+
 (defn get-nested [ctx]
   (assoc ctx :response {:status 200
                         :body "nested"}))
@@ -36,8 +43,10 @@
              ["/sync-err" :get get-sync-unhandled-err]
              ["/async" :get get-async]
              ["/async-err" :get get-async-unhandled-err]
+             ["/middleware" :get middleware get-middleware]
              ["/nested"
-              [["/route" :get get-nested]]]])
+              [{:router-opts {:caseSensitive false}}
+               ["/Route" :get get-nested]]]])
 
 (use-fixtures :once
   {:before #(reset! app (express {:routes routes}))
@@ -86,6 +95,15 @@
                (.get "/async-err")
                (.expect #(is (= 500 (.-status %))))
                (.expect #(is (re-find #"Error\: unhandled async error" (.-text %))))
+               (.end done)))))
+
+(deftest middleware-test
+  (testing "middleware route"
+    (async done
+           (-> (request @app)
+               (.get "/middleware")
+               (.expect #(is (= 200 (.-status %))))
+               (.expect #(is (= "Adam" (.-text %))))
                (.end done)))))
 
 (deftest nested-test

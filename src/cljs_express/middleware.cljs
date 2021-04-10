@@ -20,12 +20,15 @@
   (let [keys (filter-keys (.keys js/Object req))]
     (js->clj+ req :keys keys :keywordize-keys true)))
 
-(defn process-new-ctx [new-ctx res next]
+(defn process-new-ctx [new-ctx req res next]
   (if-let [{:keys [status body]} (:response new-ctx)]
     (doto res
       (.status status)
       (.send body))
-    (next)))
+    (do
+      (doseq [key (keys (:request new-ctx))]
+        (jsi/assoc! req key (clj->js (get-in new-ctx [:request key]))))
+      (next))))
 
 (defn wrap-middleware [middleware]
   ; cljs-express middleware only uses one arg
@@ -41,7 +44,7 @@
                                  maybe-chan)]
             (if (instance? js/Error new-ctx-or-err)
               (next new-ctx-or-err)
-              (process-new-ctx new-ctx-or-err res next)))
+              (process-new-ctx new-ctx-or-err req res next)))
           (catch js/Error err
             (next err)))))
     middleware))
