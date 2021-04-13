@@ -34,6 +34,17 @@
   (assoc ctx :response {:status 200
                         :body (get-in ctx [:request :name])}))
 
+(defn router-middleware-1 [ctx]
+  (assoc-in ctx [:request :mw-1] "middleware-1"))
+
+(defn router-middleware-2 [ctx]
+  (assoc-in ctx [:request :mw-2] "middleware-2"))
+
+(defn get-router-middleware [ctx]
+  (let [{:keys [mw-1 mw-2]} (:request ctx)]
+    (assoc ctx :response {:status 200
+                          :body (str mw-1 " " mw-2)})))
+
 (defn get-nested [ctx]
   (assoc ctx :response {:status 200
                         :body "nested"}))
@@ -45,8 +56,10 @@
              ["/async-err" :get get-async-unhandled-err]
              ["/middleware" :get middleware get-middleware]
              ["/nested"
-              [{:router-opts {:caseSensitive false}}
-               ["/Route" :get get-nested]]]])
+              [{:router-middleware [router-middleware-1
+                                    router-middleware-2]}
+               ["/route" :get get-nested]
+               ["/middleware" :get get-router-middleware]]]])
 
 (use-fixtures :once
   {:before #(reset! app (express {:routes routes}))
@@ -113,4 +126,13 @@
                (.get "/nested/route")
                (.expect #(is (= 200 (.-status %))))
                (.expect #(is (= "nested" (.-text %))))
+               (.end done)))))
+
+(deftest router-middleware-test
+  (testing "router middleware route"
+    (async done
+           (-> (request @app)
+               (.get "/nested/middleware")
+               (.expect #(is (= 200 (.-status %))))
+               (.expect #(is (= "middleware-1 middleware-2" (.-text %))))
                (.end done)))))
