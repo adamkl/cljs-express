@@ -2,7 +2,8 @@
   (:require [clojure.test :refer [use-fixtures deftest testing is async]]
             [clojure.core.async :refer [chan put!]]
             ["supertest" :as request]
-            [cljs-express :refer [express]]))
+            [cljs-express :refer [express]]
+            [cljs-express.middleware.json :refer [json]]))
 
 ; suppress logging of unhandled errors by express during tests
 (set! (.. js/process -env -NODE_ENV) "test")
@@ -26,6 +27,16 @@
   (let [c (chan)]
     (put! c (ex-info "unhandled async error" {}))
     c))
+
+(defn get-query-string [ctx]
+  (let [{:keys [message]} (get-in ctx [:request :query])]
+    (assoc ctx :response {:status 200
+                          :body message})))
+
+(defn post-json-body [ctx]
+  (let [{:keys [message name]} (get-in ctx [:request :body])]
+    (assoc ctx :response {:status 200
+                          :body (str "Hi " name ". " message)})))
 
 (defn middleware [ctx]
   (assoc-in ctx [:request :name] "Adam"))
@@ -54,6 +65,8 @@
              ["/sync-err" :get get-sync-unhandled-err]
              ["/async" :get get-async]
              ["/async-err" :get get-async-unhandled-err]
+             ["/query" :get get-query-string]
+             ["/json-body" :post (json) post-json-body]
              ["/middleware" :get middleware get-middleware]
              ["/nested"
               [{:router-middleware [router-middleware-1
@@ -108,6 +121,26 @@
                (.get "/async-err")
                (.expect #(is (= 500 (.-status %))))
                (.expect #(is (re-find #"Error\: unhandled async error" (.-text %))))
+               (.end done)))))
+
+(deftest query-test
+  (testing "query string route"
+    (async done
+           (-> (request @app)
+               (.get "/query?message=hello")
+               (.expect #(is (= 200 (.-status %))))
+               (.expect #(is (= "hello" (.-text %))))
+               (.end done)))))
+
+(deftest post-json-test
+  (testing "json body route"
+    (async done
+           (-> (request @app)
+               (.post "/json-body")
+               (.send #js{:name "Adam"
+                          :message "Nice to meet you."})
+               (.expect #(is (= 200 (.-status %))))
+               (.expect #(is (= "Hi Adam. Nice to meet you." (.-text %))))
                (.end done)))))
 
 (deftest middleware-test

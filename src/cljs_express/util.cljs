@@ -1,5 +1,7 @@
 (ns cljs-express.util
-  (:require [clojure.core.async.impl.channels :refer [ManyToManyChannel]]))
+  (:require [clojure.core.async.impl.channels :refer [ManyToManyChannel]]
+            [expound.alpha :as expound]
+            [clojure.spec.alpha :as s]))
 
 ;; I should model this more closely after the standard js->clj?
 ;; Doesn't properly handle arrays with non-Object values
@@ -21,3 +23,9 @@
 
 (defn chan? [c]
   (instance? ManyToManyChannel c))
+
+(defn conform-or-throw [spec x]
+  (let [conformed (s/conform spec x)]
+    (if (s/invalid? conformed)
+      (throw (ex-info (expound/expound-str spec x) {}))
+      conformed)))

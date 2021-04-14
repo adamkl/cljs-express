@@ -6,7 +6,8 @@
 
 
 (defn filter-keys
-  "Filters keys that will cause req mapping to blow up"
+  "Filters keys that will cause req mapping to blow up. 
+   Keeps only keys to support basic functionality for now"
   [keys]
   (-> (filter #(not (= \_ (get % 0))) keys)
       (set)
@@ -14,7 +15,12 @@
                     "route"
                     "next"
                     "socket"
-                    "res"})))
+                    "res"
+                    "rawTrailers"
+                    "httpVersionMajor"
+                    "httpVersionMinor"
+                    "upgrade"
+                    "rawHeaders"})))
 
 (defn req->map [^js req]
   (let [keys (filter-keys (.keys js/Object req))]

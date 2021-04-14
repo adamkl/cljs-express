@@ -1,5 +1,6 @@
 (ns cljs-express.middleware.json
   (:require [clojure.spec.alpha :as s]
+            [cljs-express.util :refer [conform-or-throw]]
             ["express" :as express]))
 
 (s/def ::inflate boolean?)
@@ -18,9 +19,8 @@
                                ::type
                                ::verify]))
 (defn json
-  ([app]
-   (json app "/" {}))
-  ([app path]
-   (json app path {}))
-  ([app path opts]
-   (.use app path (.json express opts))))
+  ([]
+   (.json express))
+  ([opts]
+   (let [conformed (conform-or-throw ::opts opts)]
+     (.json express (clj->js conformed)))))

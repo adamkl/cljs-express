@@ -2,8 +2,8 @@
   (:require ["express" :as express]
             [clojure.core.match :refer [match]]
             [clojure.spec.alpha :as s]
-            [expound.alpha :as expound]
             [applied-science.js-interop :as jsi]
+            [cljs-express.util :refer [conform-or-throw]]
             [cljs-express.middleware :refer [wrap-middleware]]))
 
 (s/def ::path string?)
@@ -18,12 +18,6 @@
 (s/def ::route-args (s/or :opts-and-routes (s/cat :opts ::opts :routes (s/+ ::route))
                           :just-routes (s/+ ::route)))
 
-(defn- conform-route-args [x]
-  (let [conformed (s/conform ::route-args x)]
-    (if (s/invalid? conformed)
-      (throw (ex-info (expound/expound-str ::route-args x) {}))
-      conformed)))
-
 (defn- get-router-and-routes [conformed]
   (match conformed
     [:opts-and-routes r] (let [{:keys [router-opts router-middleware]} (:opts r)
@@ -37,7 +31,7 @@
     [:just-routes r] [(jsi/call express :Router) r]))
 
 (defn build-router [route-args]
-  (let [conformed-args (conform-route-args route-args)
+  (let [conformed-args (conform-or-throw ::route-args route-args)
         [router routes] (get-router-and-routes conformed-args)]
     (doseq [route routes]
       (match route
