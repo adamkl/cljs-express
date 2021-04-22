@@ -7,7 +7,31 @@
             [cljs-express.middleware :refer [wrap-middleware]]))
 
 (s/def ::path string?)
-(s/def ::method #{:get :post})
+(s/def ::method #{:all
+                  :checkout
+                  :copy
+                  :delete
+                  :get
+                  :head
+                  :lock
+                  :merge
+                  :mkactivity
+                  :mkcol
+                  :move
+                  :m-search
+                  :notify
+                  :options
+                  :patch
+                  :post
+                  :purge
+                  :put
+                  :report
+                  :search
+                  :subscribe
+                  :trace
+                  :unlock
+                  :unsubscribe})
+
 (s/def ::middleware (s/+ fn?))
 (s/def ::router-opts map?)
 (s/def ::router-middleware (s/coll-of fn? :kind vector?))

@@ -3,7 +3,7 @@
             [clojure.core.async :refer [chan put!]]
             ["supertest" :as request]
             [cljs-express :refer [express]]
-            [cljs-express.middleware.json :refer [json]]))
+            [cljs-express.middleware.body-parser :refer [json text]]))
 
 ; suppress logging of unhandled errors by express during tests
 (set! (.. js/process -env -NODE_ENV) "test")
@@ -38,6 +38,10 @@
     (assoc ctx :response {:status 200
                           :body (str "Hi " name ". " message)})))
 
+(defn post-text-body [ctx]
+  (let [message (get-in ctx [:request :body])]
+    (assoc ctx :response {:status 200
+                          :body message})))
 (defn middleware [ctx]
   (assoc-in ctx [:request :name] "Adam"))
 
@@ -67,6 +71,7 @@
              ["/async-err" :get get-async-unhandled-err]
              ["/query" :get get-query-string]
              ["/json-body" :post (json) post-json-body]
+             ["/text-body" :post (text) post-text-body]
              ["/middleware" :get middleware get-middleware]
              ["/nested"
               [{:router-middleware [router-middleware-1
@@ -137,10 +142,22 @@
     (async done
            (-> (request @app)
                (.post "/json-body")
+               (.set "Content-Type", "application/json")
                (.send #js{:name "Adam"
                           :message "Nice to meet you."})
                (.expect #(is (= 200 (.-status %))))
                (.expect #(is (= "Hi Adam. Nice to meet you." (.-text %))))
+               (.end done)))))
+
+(deftest post-text-test
+  (testing "text body route"
+    (async done
+           (-> (request @app)
+               (.post "/text-body")
+               (.set "Content-Type", "text/plain")
+               (.send "Hello Adam, nice to meet you.")
+               (.expect #(is (= 200 (.-status %))))
+               (.expect #(is (= "Hello Adam, nice to meet you." (.-text %))))
                (.end done)))))
 
 (deftest middleware-test
