@@ -1,5 +1,5 @@
 ; Clojure depdencies
 {:paths ["src"]
- :dep {applied-science/js-interop {:mvn/version "0.2.7"}
-       org.clojure/core.match {:mvn/version "1.0.0"}
-       expound/expound {:mvn/version "0.8.9"}}}
+ :deps {applied-science/js-interop {:mvn/version "0.2.7"}
+        org.clojure/core.match {:mvn/version "1.0.0"}
+        expound/expound {:mvn/version "0.8.9"}}}
